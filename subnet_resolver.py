@@ -4,7 +4,8 @@ import csv
 import ipwhois
 import ipaddress
 
-NETFLIX_NET_MASKS_PATH = "./netflix_net_masks.conf"
+NETFLIX_NET_MASKS_PATH = './netflix_net_masks.conf'
+INTERFACE = 'eth0'
 
 identified_ipv4 = set()
 identified_ipv6 = set()
@@ -80,7 +81,7 @@ def sniff(interface):
 
 def main():
     netflix_net_masks = load_stored_net_masks(NETFLIX_NET_MASKS_PATH)
-    sniff('eth0')
+    sniff(INTERFACE)
     new_sub_nets = set()
     for url, ip in identified_ipv4:
         print("Process {}.".format(ip))
