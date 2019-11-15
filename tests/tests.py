@@ -1,7 +1,7 @@
-import ipaddress
 from subnet_resolver import check_if_ip_in_stored_sub_nets, \
     get_subnet_for_ipv4, \
-    load_stored_net_masks
+    load_stored_net_masks, \
+    load_domain_config
 
 
 def test_check_existing_sub_nets():
@@ -22,6 +22,12 @@ def test_get_subnet_for_ip():
 
 
 def test_load_stored_net_masks():
-    TEST_CONFIG_PATH = './resources/test_net_masks.conf'
-    test_config = load_stored_net_masks(TEST_CONFIG_PATH)
-    assert ('52.208.0.0','13') in test_config
+    test_config_path = './resources/test_net_masks.conf'
+    test_config = load_stored_net_masks(test_config_path)
+    assert ('52.208.0.0', '13') in test_config
+
+
+def test_load_domain_config():
+    test_domain_path = './resources/test_domain.conf'
+    domain_config = load_domain_config(test_domain_path)
+    assert 'netflix' in domain_config

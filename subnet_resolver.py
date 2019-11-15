@@ -5,6 +5,7 @@ import ipwhois
 import ipaddress
 
 NETFLIX_NET_MASKS_PATH = './netflix_net_masks.conf'
+DOMAIN_CONFIG_PATH = './config/domains.conf'
 INTERFACE = 'eth0'
 
 identified_ipv4 = set()
@@ -20,6 +21,17 @@ def load_stored_net_masks(path):
         for entry in loaded_mask_list:
             ip, bit_mask = entry[0].split('/')
             loaded_mask_set.add((ip, bit_mask))
+        return loaded_mask_set
+
+
+def load_domain_config(path):
+    with open(path, 'r') as net_mask_file:
+        loaded_mask_set = set()
+        reader = csv.reader(net_mask_file)
+        loaded_mask_list = list(reader)
+        for entry in loaded_mask_list:
+            domain = entry[0]
+            loaded_mask_set.add(domain)
         return loaded_mask_set
 
 
@@ -44,8 +56,18 @@ def check_if_ip_in_stored_sub_nets(ip, sub_nets):
     return match_found
 
 
+def to_capture(packet):
+    domains = load_domain_config(DOMAIN_CONFIG_PATH)
+    capture = False
+    for domain in domains:
+        if domain in str(packet['DNS'].qd[0].qname):
+            capture = True
+    return capture
+
+
 def process_sniffed_packet(packet):
-    if 'netflix' in str(packet['DNS'].qd[0].qname):
+
+    if to_capture:
         if packet['DNS'].ancount > 0:
             answer_count = packet['DNS'].ancount
             # print(packet.show())
@@ -60,13 +82,6 @@ def process_sniffed_packet(packet):
                 # Process CNAME responses
                 elif packet['DNS'].an[count].type == 5:
                     print(packet.show())
-
-
-def write_ips_to_csv(ips, path, filename):
-    with open(path + filename, mode='w') as ipfile:
-        ip_file_writer = csv.writer(ipfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        for ip in ips:
-            ip_file_writer.writerow(ip)
 
 
 def append_sub_nets_to_file(sub_nets, file_path):
@@ -89,11 +104,9 @@ def main():
         if not match_found:
             sub_net, net_mask = get_subnet_for_ipv4(ip)
             new_sub_nets.add(sub_net+"/"+net_mask)
+            netflix_net_masks.add((sub_net, net_mask))
 
     append_sub_nets_to_file(new_sub_nets, NETFLIX_NET_MASKS_PATH)
-    #write_ips_to_csv(identified_ipv4, './', 'test.csv')
-    #print(identified_ipv4)
-    #print(identified_ipv6)
 
 
 if __name__ == '__main__':
